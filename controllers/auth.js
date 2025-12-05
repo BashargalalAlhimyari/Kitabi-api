@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const User = require("../models/user");
 const Token = require("../models/token");
 const generateJWT = require('../utils/generateJWT')
+const email = require('../helpers/email_sender');
 
 
 exports.register = async (req, res) => {
@@ -89,7 +90,54 @@ exports.getAllUsers = async (req, res) => {
 };
 
 exports.forgetPassword = async (req, res) => {
-}
+    try {
+        let { user_email } = req.body;
+
+        if (!user_email) {
+            return res.status(400).json({ message: 'your email is required' });
+        }
+
+        const user = await User.findOne({ user_email });
+
+        if (!user) {
+            return res.status(404).send({ status: "FAIL", data: { user: "user not found" } });
+        }
+
+        // Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000); // always 6 digits
+        const message = otp;
+
+        // Send email
+        const result = await email.sendEmail(
+            user.user_email,
+            "Password Reset OTP",
+            message
+        );
+
+        if (!result.success) { 
+            return res.status(500).send({
+                status: "FAIL",
+                message: "Error sending email",
+                error: result.error
+            });
+        }
+
+        // TODO: store OTP in DB with expiration (important)
+        // Example:
+        // await ResetOTP.create({ userId: user._id, otp, createdAt: Date.now() });
+
+        return res.status(200).send({
+            status: "SUCCESS",
+            message: "OTP sent to your email"
+        });
+
+    } catch (error) {
+        return res.status(500).json({ 
+            message: error.message, 
+            type: "Internal Server Error" 
+        });
+    }
+};
 
 exports.verifyOtp = async (req, res) => {
 }
