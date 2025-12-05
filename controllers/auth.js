@@ -93,7 +93,34 @@ exports.forgetPassword = async (req, res) => {
 
 exports.verifyOtp = async (req, res) => {
 }
+exports.verifyToken = async (req, res) => {
+    try {
+        let accessToken = req.headers.authorization;
+        if (!accessToken) {
+            return res.status(401).json(false);
+        }
+        accessToken = accessToken.split(" ")[1].trim();
+        const token = await Token.findOne({ accessToken });
+        if (!token) {
+            return res.status(401).json(false);
+        }
+        const tokenData = jwt.decode(token.refreshToken);
 
+        const user = await User.findById(tokenData.id);
+        if (!user) {
+            return res.status(401).json(false);
+        }
+        const isValid = await jwt.verify(token.refreshToken, process.env.REFRESH_JWT_SECRET);
+        if (!isValid) {
+            return res.status(401).json(false);
+        }
+        return res.status(200).json(true);
+
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message, type: "Internal Server Error" });
+    }
+}
 
 exports.resetPassword = async (req, res) => {
 }
