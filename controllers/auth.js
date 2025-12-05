@@ -197,24 +197,29 @@ exports.verifyToken = async (req, res) => {
 }
 
 exports.resetPassword = async (req, res) => {
-    try{
+    const error = validationResult(req);
+    if (!error.isEmpty()) {
+        const errorMessage = error.array().map((error) => ({ message: error.msg, field: error.path }));
+        return res.status(400).json({ message: errorMessage });
+    }
+    try {
         const { user_email, new_password } = req.body;
         const user = await User.findOne({ user_email });
         if (!user) {
-             return res.status(404).send({ status: "FAIL", data: { user: "user not found" } });
+            return res.status(404).send({ status: "FAIL", data: { user: "user not found" } });
         }
-        if(user.reset_password_otp !==1){
-         return res.status(404).send({ status: "FAIL", data: { user: " " } });
+        if (user.reset_password_otp !== 1) {
+            return res.status(404).send({ status: "FAIL", data: { user: "the time out" } });
 
         }
         const hashedPassword = await bcrypt.hash(new_password, 10);
         user.user_password = hashedPassword;
+        user.reset_password_otp = undefined;
         await user.save();
-        return res.status(200).send({ status: "SUCCESS", message: "Password reset successfully" }); 
-        
-        
+        return res.status(200).send({ status: "SUCCESS", message: "Password reset successfully" });
 
-    }catch (error) {
+
+    } catch (error) {
         return res.status(500).json({ message: error.message, type: "Internal Server Error" });
     }
 }
