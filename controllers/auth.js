@@ -96,7 +96,6 @@ exports.forgetPassword = async (req, res) => {
         if (!user_email) {
             return res.status(400).json({ message: 'your email is required' });
         }
-
         const user = await User.findOne({ user_email });
 
         if (!user) {
@@ -106,6 +105,10 @@ exports.forgetPassword = async (req, res) => {
         // Generate OTP
         const otp = Math.floor(100000 + Math.random() * 900000); // always 6 digits
         const message = otp;
+        user.reset_password_otp = otp;
+        user.reset_password_otp_expire = Date.now() + 2 * 60 * 1000; // OTP valid for 2 minutes
+        await user.save();
+
 
         // Send email
         const result = await email.sendEmail(
@@ -114,7 +117,7 @@ exports.forgetPassword = async (req, res) => {
             message
         );
 
-        if (!result.success) { 
+        if (!result.success) {
             return res.status(500).send({
                 status: "FAIL",
                 message: "Error sending email",
@@ -132,15 +135,38 @@ exports.forgetPassword = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({ 
-            message: error.message, 
-            type: "Internal Server Error" 
+        return res.status(500).json({
+            message: error.message,
+            type: "Internal Server Error"
         });
     }
 };
 
-exports.verifyOtp = async (req, res) => {
+exports.verifyPasswordResetOtp = async (req, res) => {
+    const { user_email, otp } = req.body;
+    try {
+        const user = await User.findOne({ user_email });
+        if (!user) {
+            return res.status(404).send({ status: "FAIL", data: { user: "user not found" } });
+        }
+
+        if (Number(user.reset_password_otp) !== Number(otp) || Date.now() > user.reset_password_otp_expire) {
+            return res.status(400).send({ status: "FAIL", data: { otp: "Invalid or expired OTP" } });
+        }
+
+        // مسح OTP بعد الاستخدام
+        user.reset_password_otp = 1;
+        user.reset_password_otp_expire = undefined;
+        await user.save();
+
+        return res.status(200).send({ status: "SUCCESS", message: "OTP verified" });
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message, type: "Internal Server Error" });
+    }
 }
+
+
 exports.verifyToken = async (req, res) => {
     try {
         let accessToken = req.headers.authorization;
@@ -171,4 +197,24 @@ exports.verifyToken = async (req, res) => {
 }
 
 exports.resetPassword = async (req, res) => {
+    try{
+        const { user_email, new_password } = req.body;
+        const user = await User.findOne({ user_email });
+        if (!user) {
+             return res.status(404).send({ status: "FAIL", data: { user: "user not found" } });
+        }
+        if(user.reset_password_otp !==1){
+         return res.status(404).send({ status: "FAIL", data: { user: " " } });
+
+        }
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+        user.user_password = hashedPassword;
+        await user.save();
+        return res.status(200).send({ status: "SUCCESS", message: "Password reset successfully" }); 
+        
+        
+
+    }catch (error) {
+        return res.status(500).json({ message: error.message, type: "Internal Server Error" });
+    }
 }
