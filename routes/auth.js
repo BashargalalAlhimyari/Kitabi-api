@@ -34,6 +34,8 @@ router.post("/register", authcontroller.register)
 router.post("/login", authcontroller.login)
 router.post("/forget-password", authcontroller.forgetPassword)
 router.post("/verify-otp", authcontroller.verifyOtp)
+router.post("/verifyToken", authcontroller.verifyToken)
+
 router.post("/reset-password", authcontroller.resetPassword)
 router.get("/users", authcontroller.getAllUsers)
 
