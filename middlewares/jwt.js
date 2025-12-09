@@ -10,20 +10,20 @@ function authjwt() {
     }).unless({
         path: [
             // استثناء المسارات التي لا تحتاج إلى توكن
-            `${api}/auth/login`,
-            `${api}/auth/login/`,
+            `${api}/login`,
+            `${api}/login/`,
 
-            `${api}/auth/register`
-                `${api}/auth/register/`
+            `${api}/register`,
+            `${api}/register/`,
 
-                `${api}/auth/forgot-password`,
-            `${api}/auth/forgot-password/`,
+            `${api}/forget-password`,
+            `${api}/forget-password/`,
 
-            `${api}/auth/verifyotp`,
-            `${api}/auth/verifyotp/`,
+            `${api}/verifyotp`,
+            `${api}/verifyotp/`,
 
-            `${api}/auth/reset-password`,
-            `${api}/auth/reset-password/`
+            `${api}/reset-password`,
+            `${api}/reset-password/`
 
         ]
     });

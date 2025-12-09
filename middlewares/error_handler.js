@@ -66,7 +66,7 @@ async function errorHandler(err, req, res, next) {
         // =============================
         // 5) Create New Access Token
         // =============================
-        const payload = { id: user._id, isAdmin: user.isAdmin , user_email: user.user_email };
+        const payload = { id: user._id, isAdmin: user.isAdmin , user_email };
         const newAccessToken = await generateJWT(payload);
 
         // Update DB
